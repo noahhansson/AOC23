@@ -31,7 +31,7 @@ def get_second_solution():
             line_fixed += c
             for key, value in int_map.items():
                 if line_fixed.endswith(key):
-                    line_fixed = line_fixed.replace(key, str(value))
+                    line_fixed = line_fixed.replace(key, f"{key}{value}{key}")
 
         numbers = "".join([x for x in line_fixed if x.isnumeric()])
         s += int(numbers[0] + numbers[-1])
