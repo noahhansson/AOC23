@@ -49,6 +49,19 @@ def rotate_90(rocks: set[RockType]) -> set[RockType]:
     return {(-y, x) for x, y in rocks}
 
 
+def detect_modulo(l: list[int]) -> int | None:
+    if len(l) < 4:
+        return None
+    mod = 2
+    while True:
+        if len(l) / mod < 4:
+            return None
+        if all([l[-1 - i] == l[(-1 - i - mod)] for i in range(1, 2 * mod)]):
+            return mod
+
+        mod += 1
+
+
 def get_first_solution():
     rounds, squares = parse_input()
     rounds = tilt(rounds, squares)
@@ -59,16 +72,22 @@ def get_first_solution():
 def get_second_solution():
     rounds, squares = parse_input()
 
-    # pattern with period 9 starts appearing after cycle 176
-    # (1000000000 - 176) % 9 = 5
-    # 176 + 5 = 181
-    for _ in range(0, 181):
+    scores = []
+    n = 1000000000
+    for i in range(0, n):
         for _ in range(4):
             rounds = tilt(rounds, squares)
             rounds = rotate_90(rounds)
             squares = rotate_90(squares)
 
-    return count_score(rounds, squares)
+        scores.append(count_score(rounds, squares))
+
+        if modulo := detect_modulo(scores):
+            print(i, modulo)
+            break
+
+    remainder = (n - i) % modulo
+    return scores[i - modulo + remainder - 1]
 
 
 print(get_first_solution())
