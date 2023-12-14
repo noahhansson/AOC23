@@ -1,34 +1,10 @@
 from utils import read_input
-from typing import TypeAlias
 
-Coord: TypeAlias = tuple[int, int]
-Pattern: TypeAlias = set[Coord]
-
-
-def print_pattern(pattern: Pattern) -> None:
-    xmin = min([x for x, _ in pattern])
-    ymin = min([y for _, y in pattern])
-    xmax = max([x for x, _ in pattern])
-    ymax = max([y for _, y in pattern])
-
-    print(
-        "\n".join(
-            [" ".join([str(x) for x in range(xmin, xmax + 1)])]
-            + [
-                " ".join(
-                    ["#" if (x, y) in pattern else "." for x in range(xmin, xmax + 1)]
-                )
-                for y in range(ymin, ymax + 1)
-            ]
-        )
-    )
-
-
-def parse_input() -> list[Pattern]:
+def parse_input() -> list[set[tuple[int, int]]]:
     inpt = read_input("13")
 
-    patterns: list[Pattern] = list()
-    buffer: set[Coord] = set()
+    patterns: list[set[tuple[int, int]]] = list()
+    buffer: set[tuple[int, int]] = set()
 
     y = 0
     for row in inpt:
@@ -46,21 +22,13 @@ def parse_input() -> list[Pattern]:
 
     return patterns
 
-
-def transpose_pattern(pattern: Pattern) -> Pattern:
+def transpose_pattern(pattern: set[tuple[int, int]]) -> set[tuple[int, int]]:
     return {(y, x) for x, y in pattern}
 
+def find_reflection(pattern: set[tuple[int, int]], p2: bool = False) -> int:
+    return reflect(pattern, p2) + 100 * reflect(transpose_pattern(pattern), p2)
 
-def find_reflection(pattern: Pattern, p2: bool = False) -> int:
-    if s := reflect(pattern, p2):
-        return s
-    elif s := reflect(transpose_pattern(pattern), p2):
-        return 100 * s
-
-    raise RuntimeError("Could not find a reflection")
-
-
-def reflect(pattern: Pattern, p2: bool = False) -> int | None:
+def reflect(pattern: set[tuple[int, int]], p2: bool = False) -> int:
     xmin = min([x for x, _ in pattern])
     xmax = max([x for x, _ in pattern])
 
@@ -92,16 +60,7 @@ def reflect(pattern: Pattern, p2: bool = False) -> int | None:
             ):
                 return xr + 1
 
-    return None
+    return 0
 
-
-def get_first_solution() -> int:
-    return sum([find_reflection(pattern) for pattern in parse_input()])
-
-
-def get_second_solution() -> int:
-    return sum([find_reflection(pattern, p2=True) for pattern in parse_input()])
-
-
-print(get_first_solution())
-print(get_second_solution())
+print(sum([find_reflection(pattern) for pattern in parse_input()]))
+print(sum([find_reflection(pattern, p2=True) for pattern in parse_input()]))
