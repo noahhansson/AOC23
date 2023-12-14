@@ -83,7 +83,6 @@ def get_second_solution():
         scores.append(count_score(rounds, squares))
 
         if modulo := detect_modulo(scores):
-            print(i, modulo)
             break
 
     remainder = (n - i) % modulo
