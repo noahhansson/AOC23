@@ -1,4 +1,8 @@
 from utils import read_input
+from typing import TypeAlias
+
+LensType: TypeAlias = tuple[str, int]
+LensBoxType: TypeAlias = list[LensType]
 
 
 def parse_input() -> list[str]:
@@ -24,7 +28,7 @@ def get_label(s: str) -> str:
     raise ValueError
 
 
-def calc_focusing_power(boxes: list[list[tuple[str, int]]]) -> int:
+def calc_focusing_power(boxes: list[LensBoxType]) -> int:
     score = 0
     for i, lenses in enumerate(boxes):
         for j, lens in enumerate(lenses):
@@ -40,7 +44,7 @@ def get_first_solution() -> int:
 def get_second_solution() -> int:
     steps = parse_input()
 
-    boxes: list[list[tuple[str, int]]] = [[] for _ in range(256)]
+    boxes: list[LensBoxType] = [[] for _ in range(256)]
 
     for step in steps:
         box_idx = encode(get_label(step))
