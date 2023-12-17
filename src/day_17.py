@@ -14,15 +14,17 @@ def parse_input() -> dict[tuple[int, int], int]:
 
 
 def get_neighbours(
-    pos: tuple[int, int], costs: dict[tuple[int, int], int], path: list[str]
+    pos: tuple[int, int],
+    costs: dict[tuple[int, int], int],
+    path: list[str],
+    p2: bool = False,
 ) -> list[tuple[tuple[int, int], str]]:
     neighbours = []
 
-    if len(path) >= 3:
-        prev_steps = set(path[-3:])
-        straight_line = len(prev_steps) == 1
-    else:
-        straight_line = False
+    lookback = 3 if not p2 else 10
+    prev_steps = set(path[-lookback:])
+    straight_line = len(prev_steps) == 1
+    uncomplete_line = len(set(path[-4:])) > 1
 
     opposites = {
         "left": "right",
@@ -39,52 +41,54 @@ def get_neighbours(
     ):
         if (pos[0] + dx, pos[1] + dy) in costs.keys():
             if (
-                not (straight_line 
-                and direction in prev_steps)
-                and opposites.get(path[-1]) != direction 
+                not (straight_line and direction in prev_steps)
+                and opposites.get(path[-1]) != direction
+                and not (p2 and uncomplete_line and direction != path[-1])
             ):
                 neighbours.append(((pos[0] + dx, pos[1] + dy), direction))
 
     return neighbours
 
-def taxicab(pos: tuple[int, int], target: tuple[int, int]) -> int:
-    return abs(pos[0] - target[0]) + abs(pos[1] - target[1])
 
 def dijkstra(
     start_pos: tuple[int, int],
     target_pos: tuple[int, int],
     costs: dict[tuple[int, int], int],
+    p2: bool = False,
 ) -> int:
-    
+    lookback = 3 if not p2 else 10
+
     seen: set[tuple[tuple[int, int], tuple[str, ...]]] = set()
     queue: list[tuple[int, tuple[int, int], list[str]]] = []
     heapq.heapify(queue)
 
-    path: list[str] = ["", "", ""]
+    path: list[str] = [""] * lookback
     heapq.heappush(queue, (0, start_pos, path))
 
-    seen.add((start_pos, tuple(path[-3:])))
+    seen.add((start_pos, tuple(path[-lookback:])))
 
     while queue:
         cost, position, path = heapq.heappop(queue)
 
-        print(cost, position)
         if position == target_pos:
+            if len(set(path[-4:])) > 1:
+                continue
             return cost
 
-        neighbours = get_neighbours(position, costs, path)
+        neighbours = get_neighbours(position, costs, path, p2)
 
         for neighbour, direction in neighbours:
             n_cost = cost + costs[neighbour]
 
-            if ((neighbour, tuple(path[-2:] + [direction])) not in seen):
-                seen.add((neighbour, tuple(path[-2:] + [direction])))
+            key = (neighbour, tuple(path[-(lookback - 1) :] + [direction]))
+            if key not in seen:
+                seen.add(key)
                 heapq.heappush(queue, (n_cost, neighbour, path + [direction]))
 
     return -1
 
 
-def get_first_solution():
+def get_first_solution() -> int:
     costs = parse_input()
 
     start_pos = (0, 0)
@@ -95,8 +99,15 @@ def get_first_solution():
     return dijkstra(start_pos, target_pos, costs)
 
 
-def get_second_solution():
-    pass
+def get_second_solution() -> int:
+    costs = parse_input()
+
+    start_pos = (0, 0)
+    yy = max([y for x, y in costs.keys()])
+    xx = max([x for x, y in costs.keys()])
+    target_pos = (xx, yy)
+
+    return dijkstra(start_pos, target_pos, costs, p2=True)
 
 
 print(get_first_solution())
