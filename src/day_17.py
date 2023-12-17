@@ -2,7 +2,7 @@ from utils import read_input
 import heapq
 
 
-def parse_input() -> dict[tuple[int, int], int]:
+def parse_input() -> tuple[dict[tuple[int, int], int], tuple[int, int]]:
     inpt = read_input("17")
 
     costs = {}
@@ -10,42 +10,34 @@ def parse_input() -> dict[tuple[int, int], int]:
         for x, c in enumerate(row):
             costs[(x, y)] = int(c)
 
-    return costs
+    return costs, (x,y)
 
 
 def get_neighbours(
     pos: tuple[int, int],
     costs: dict[tuple[int, int], int],
-    path: list[str],
+    prev_direction: str,
     p2: bool = False,
-) -> list[tuple[tuple[int, int], str]]:
+) -> list[tuple[tuple[int, int], int, list[str]]]:
     neighbours = []
 
-    lookback = 3 if not p2 else 10
-    prev_steps = set(path[-lookback:])
-    straight_line = len(prev_steps) == 1
-    uncomplete_line = len(set(path[-4:])) > 1
+    max_dist = 10 if p2 else 3
+    min_dist = 4 if p2 else 1
 
-    opposites = {
-        "left": "right",
-        "right": "left",
-        "up": "down",
-        "down": "up",
-    }
-
-    for dx, dy, direction in (
-        (-1, 0, "left"),
-        (1, 0, "right"),
-        (0, -1, "up"),
-        (0, 1, "down"),
+    for dx, dy, direction, opposite in (
+        (-1, 0, "left", "right"),
+        (1, 0, "right", "left"),
+        (0, -1, "up", "down"),
+        (0, 1, "down", "up"),
     ):
-        if (pos[0] + dx, pos[1] + dy) in costs.keys():
-            if (
-                not (straight_line and direction in prev_steps)
-                and opposites.get(path[-1]) != direction
-                and not (p2 and uncomplete_line and direction != path[-1])
-            ):
-                neighbours.append(((pos[0] + dx, pos[1] + dy), direction))
+        cost = 0
+        if prev_direction not in (direction, opposite):
+            for steps in range(1, max_dist + 1):
+                next_pos = (pos[0] + dx * steps, pos[1] + dy * steps)
+                if next_pos in costs.keys():
+                    cost += costs[next_pos]
+                    if steps >= min_dist:
+                        neighbours.append((next_pos, cost, [direction] * steps))
 
     return neighbours
 
@@ -56,58 +48,44 @@ def dijkstra(
     costs: dict[tuple[int, int], int],
     p2: bool = False,
 ) -> int:
-    lookback = 3 if not p2 else 10
+    
+    # {((x, y), prev_direction): cost}
+    seen: dict[tuple[tuple[int, int], str], int] = {}
+    path: list[str] = [""]
 
-    seen: set[tuple[tuple[int, int], tuple[str, ...]]] = set()
     queue: list[tuple[int, tuple[int, int], list[str]]] = []
     heapq.heapify(queue)
-
-    path: list[str] = [""] * lookback
     heapq.heappush(queue, (0, start_pos, path))
 
-    seen.add((start_pos, tuple(path[-lookback:])))
+    seen[(start_pos, path[-1])] = 0
 
     while queue:
         cost, position, path = heapq.heappop(queue)
 
         if position == target_pos:
-            if len(set(path[-4:])) > 1:
-                continue
             return cost
 
-        neighbours = get_neighbours(position, costs, path, p2)
+        neighbours = get_neighbours(position, costs, path[-1], p2)
 
-        for neighbour, direction in neighbours:
-            n_cost = cost + costs[neighbour]
-
-            key = (neighbour, tuple(path[-(lookback - 1) :] + [direction]))
-            if key not in seen:
-                seen.add(key)
-                heapq.heappush(queue, (n_cost, neighbour, path + [direction]))
+        for neighbour, n_cost, directions in neighbours:
+            key = (neighbour, directions[-1])
+            if key not in seen.keys() or seen[key] > cost + n_cost:
+                seen[key] = cost + n_cost
+                heapq.heappush(queue, (cost + n_cost, neighbour, path + directions))
 
     return -1
 
 
 def get_first_solution() -> int:
-    costs = parse_input()
+    costs, target = parse_input()
 
-    start_pos = (0, 0)
-    yy = max([y for x, y in costs.keys()])
-    xx = max([x for x, y in costs.keys()])
-    target_pos = (xx, yy)
-
-    return dijkstra(start_pos, target_pos, costs)
+    return dijkstra((0, 0), target, costs)
 
 
 def get_second_solution() -> int:
-    costs = parse_input()
+    costs, target = parse_input()
 
-    start_pos = (0, 0)
-    yy = max([y for x, y in costs.keys()])
-    xx = max([x for x, y in costs.keys()])
-    target_pos = (xx, yy)
-
-    return dijkstra(start_pos, target_pos, costs, p2=True)
+    return dijkstra((0, 0), target, costs, p2=True)
 
 
 print(get_first_solution())
