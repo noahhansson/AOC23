@@ -14,17 +14,15 @@ def parse_input() -> dict[tuple[int, int], int]:
 
 
 def get_neighbours(
-    pos: tuple[int, int], costs: dict[tuple[int, int], int], path: list[str], p2: bool = False
+    pos: tuple[int, int], costs: dict[tuple[int, int], int], path: list[str]
 ) -> list[tuple[tuple[int, int], str]]:
     neighbours = []
 
-
-    if p2:
-        prev_steps = set(path[-10:])
-    else:
+    if len(path) >= 3:
         prev_steps = set(path[-3:])
-
-    straight_line = len(prev_steps) == 1
+        straight_line = len(prev_steps) == 1
+    else:
+        straight_line = False
 
     opposites = {
         "left": "right",
@@ -49,29 +47,28 @@ def get_neighbours(
 
     return neighbours
 
+def taxicab(pos: tuple[int, int], target: tuple[int, int]) -> int:
+    return abs(pos[0] - target[0]) + abs(pos[1] - target[1])
 
 def dijkstra(
     start_pos: tuple[int, int],
     target_pos: tuple[int, int],
     costs: dict[tuple[int, int], int],
-    p2: bool = False
 ) -> int:
-    
-    lookback = 3 if not p2 else 10
     
     seen: set[tuple[tuple[int, int], tuple[str, ...]]] = set()
     queue: list[tuple[int, tuple[int, int], list[str]]] = []
     heapq.heapify(queue)
 
-    path: list[str] = [""] * lookback
+    path: list[str] = ["", "", ""]
     heapq.heappush(queue, (0, start_pos, path))
 
-    seen.add((start_pos, tuple(path[-lookback:])))
+    seen.add((start_pos, tuple(path[-3:])))
 
     while queue:
         cost, position, path = heapq.heappop(queue)
 
-        #print(cost, position)
+        print(cost, position)
         if position == target_pos:
             return cost
 
@@ -80,8 +77,8 @@ def dijkstra(
         for neighbour, direction in neighbours:
             n_cost = cost + costs[neighbour]
 
-            if ((neighbour, tuple(path[-lookback - 1:] + [direction])) not in seen):
-                seen.add((neighbour, tuple(path[-lookback - 1:] + [direction])))
+            if ((neighbour, tuple(path[-2:] + [direction])) not in seen):
+                seen.add((neighbour, tuple(path[-2:] + [direction])))
                 heapq.heappush(queue, (n_cost, neighbour, path + [direction]))
 
     return -1
